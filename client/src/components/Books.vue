@@ -13,6 +13,7 @@
               <th scope="col">Title</th>
               <th scope="col">Author</th>
               <th scope="col">Read?</th>
+              <th scope="col">Purchase Price</th>
               <th></th>
             </tr>
           </thead>
@@ -24,21 +25,24 @@
                 <span v-if="book.read">Yes</span>
                 <span v-else>No</span>
               </td>
+              <td>${{ book.price }}</td>
               <td>
                 <div class="btn-group" role="group">
-                  <button
-                          type="button"
+                  <button type="button"
                           class="btn btn-warning btn-sm"
                           v-b-modal.book-update-modal
                           @click="editBook(book)">
                       Update
                   </button>
-                  <button
-                          type="button"
+                  <button type="button"
                           class="btn btn-danger btn-sm"
                           @click="onDeleteBook(book)">
                       Delete
                   </button>
+                  <router-link :to="`/order/${book.id}`"
+                              class="btn btn-primary btn-sm">
+                      Purchase
+                  </router-link>
                 </div>
               </td>
             </tr>
@@ -46,35 +50,47 @@
         </table>
       </div>
     </div>
+    <!-- add book modal -->
     <b-modal ref="addBookModal"
             id="book-modal"
             title="Add a new book"
             hide-footer>
       <b-form @submit="onSubmit" @reset="onReset" class="w-100">
-      <b-form-group id="form-title-group"
-                    label="Title:"
-                    label-for="form-title-input">
-          <b-form-input id="form-title-input"
-                        type="text"
-                        v-model="addBookForm.title"
-                        required
-                        placeholder="Enter title">
-          </b-form-input>
+        <b-form-group id="form-title-group"
+                      label="Title:"
+                      label-for="form-title-input">
+            <b-form-input id="form-title-input"
+                          type="text"
+                          v-model="addBookForm.title"
+                          required
+                          placeholder="Enter title">
+            </b-form-input>
         </b-form-group>
         <b-form-group id="form-author-group"
                       label="Author:"
                       label-for="form-author-input">
-            <b-form-input id="form-author-input"
-                          type="text"
-                          v-model="addBookForm.author"
-                          required
-                          placeholder="Enter author">
-            </b-form-input>
-          </b-form-group>
+          <b-form-input id="form-author-input"
+                        type="text"
+                        v-model="addBookForm.author"
+                        required
+                        placeholder="Enter author">
+          </b-form-input>
+        </b-form-group>
+        <b-form-group id="form-price-group"
+                      label="Purchase price:"
+                      label-for="form-price-input">
+          <b-form-input id="form-price-input"
+                        type="number"
+                        step="0.01"
+                        v-model="addBookForm.price"
+                        required
+                        placeholder="Enter price">
+          </b-form-input>
+        </b-form-group>
         <b-form-group id="form-read-group">
-          <b-form-checkbox-group v-model="addBookForm.read" id="form-checks">
-            <b-form-checkbox value="true">Read?</b-form-checkbox>
-          </b-form-checkbox-group>
+            <b-form-checkbox-group v-model="addBookForm.read" id="form-checks">
+              <b-form-checkbox value="true">Read?</b-form-checkbox>
+            </b-form-checkbox-group>
         </b-form-group>
         <b-button-group>
           <b-button type="submit" variant="primary">Submit</b-button>
@@ -82,14 +98,15 @@
         </b-button-group>
       </b-form>
     </b-modal>
+    <!-- edit book modal -->
     <b-modal ref="editBookModal"
-            id="book-update-modal"
-            title="Update"
-            hide-footer>
+             id="book-update-modal"
+             title="Update"
+             hide-footer>
       <b-form @submit="onSubmitUpdate" @reset="onResetUpdate" class="w-100">
-      <b-form-group id="form-title-edit-group"
-                    label="Title:"
-                    label-for="form-title-edit-input">
+        <b-form-group id="form-title-edit-group"
+                      label="Title:"
+                      label-for="form-title-edit-input">
           <b-form-input id="form-title-edit-input"
                         type="text"
                         v-model="editForm.title"
@@ -100,13 +117,24 @@
         <b-form-group id="form-author-edit-group"
                       label="Author:"
                       label-for="form-author-edit-input">
-            <b-form-input id="form-author-edit-input"
-                          type="text"
-                          v-model="editForm.author"
-                          required
-                          placeholder="Enter author">
-            </b-form-input>
-          </b-form-group>
+          <b-form-input id="form-author-edit-input"
+                        type="text"
+                        v-model="editForm.author"
+                        required
+                        placeholder="Enter author">
+          </b-form-input>
+        </b-form-group>
+        <b-form-group id="form-price-edit-group"
+                      label="Purchase price:"
+                      label-for="form-price-edit-input">
+          <b-form-input id="form-price-edit-input"
+                        type="number"
+                        step="0.01"
+                        v-model="editForm.price"
+                        required
+                        placeholder="Enter price">
+          </b-form-input>
+        </b-form-group>
         <b-form-group id="form-read-edit-group">
           <b-form-checkbox-group v-model="editForm.read" id="form-checks">
             <b-form-checkbox value="true">Read?</b-form-checkbox>
@@ -133,6 +161,7 @@ export default {
         title: '',
         author: '',
         read: [],
+        price: '',
       },
       message: '',
       showMessage: false,
@@ -141,6 +170,7 @@ export default {
         title: '',
         author: '',
         read: [],
+        price: '',
       },
     };
   },
@@ -177,10 +207,12 @@ export default {
       this.addBookForm.title = '';
       this.addBookForm.author = '';
       this.addBookForm.read = [];
+      this.addBookForm.price = '';
       this.editForm.id = '';
       this.editForm.title = '';
       this.editForm.author = '';
       this.editForm.read = [];
+      this.editForm.price = '';
     },
     onSubmit(evt) {
       evt.preventDefault();
@@ -191,6 +223,7 @@ export default {
         title: this.addBookForm.title,
         author: this.addBookForm.author,
         read, // property shorthand
+        price: this.addBookForm.price,
       };
       this.addBook(payload);
       this.initForm();
@@ -212,6 +245,7 @@ export default {
         title: this.editForm.title,
         author: this.editForm.author,
         read,
+        price: this.editForm.price,
       };
       this.updateBook(payload, this.editForm.id);
     },
