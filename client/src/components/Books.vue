@@ -39,10 +39,11 @@
                           @click="onDeleteBook(book)">
                       Delete
                   </button>
-                  <router-link :to="`/order/${book.id}`"
-                              class="btn btn-primary btn-sm">
+                  <button type="button"
+                          class="btn btn-primary btn-sm"
+                          @click="purchaseBook(book.id)">
                       Purchase
-                  </router-link>
+                  </button>
                 </div>
               </td>
             </tr>
@@ -172,6 +173,7 @@ export default {
         read: [],
         price: '',
       },
+      stripe: null,
     };
   },
   components: {
@@ -286,9 +288,37 @@ export default {
     onDeleteBook(book) {
       this.removeBook(book.id);
     },
+    purchaseBook(bookId) {
+      // Get Checkout Session ID
+      fetch('http://localhost:5000/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ book_id: bookId }),
+      })
+        .then((result) => result.json())
+        .then((data) => {
+          console.log(data);
+          // Redirect to Stripe Checkout
+          return this.stripe.redirectToCheckout({ sessionId: data.sessionId });
+        })
+        .then((res) => {
+          console.log(res);
+        });
+    },
+    getStripePublishableKey() {
+      fetch('http://localhost:5000/config')
+        .then((result) => result.json())
+        .then((data) => {
+          // Initialize Stripe.js
+          this.stripe = Stripe(data.publicKey); // eslint-disable-line no-undef
+        });
+    },
   },
   created() {
     this.getBooks();
+    this.getStripePublishableKey();
   },
 };
 </script>
