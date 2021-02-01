@@ -1,3 +1,4 @@
+import json
 import os
 import uuid
 
@@ -30,12 +31,21 @@ BOOKS = [
     }
 ]
 
+
 # configuration
 DEBUG = True
 
 # instantiate the app
 app = Flask(__name__)
 app.config.from_object(__name__)
+
+# configure stripe
+stripe_keys = {
+    'secret_key': os.environ['STRIPE_SECRET_KEY'],
+    'publishable_key': os.environ['STRIPE_PUBLISHABLE_KEY'],
+}
+
+stripe.api_key = stripe_keys['secret_key']
 
 # enable CORS
 CORS(app, resources={r'/*': {'origins': '*'}})
@@ -53,6 +63,47 @@ def remove_book(book_id):
 @app.route('/ping', methods=['GET'])
 def ping_pong():
     return jsonify('pong!')
+
+
+@app.route('/config')
+def get_publishable_key():
+    stripe_config = {'publicKey': stripe_keys['publishable_key']}
+    return jsonify(stripe_config)
+
+
+@app.route('/create-checkout-session', methods=['POST'])
+def create_checkout_session():
+    domain_url = 'http://localhost:8081'
+
+    try:
+        data = json.loads(request.data)
+
+        # get book
+        book_to_purchase = ''
+        for book in BOOKS:
+            if book['id'] == data['book_id']:
+                book_to_purchase = book
+
+        # create new checkout session
+        checkout_session = stripe.checkout.Session.create(
+            success_url=domain_url +
+            '/success?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=domain_url + '/canceled',
+            payment_method_types=['card'],
+            mode='payment',
+            line_items=[
+                {
+                    'name': book_to_purchase['title'],
+                    'quantity': 1,
+                    'currency': 'usd',
+                    'amount': round(float(book_to_purchase['price']) * 100),
+                }
+            ]
+        )
+
+        return jsonify({'sessionId': checkout_session['id']})
+    except Exception as e:
+        return jsonify(error=str(e)), 403
 
 
 @app.route('/books', methods=['GET', 'POST'])
@@ -98,34 +149,6 @@ def single_book(book_id):
         remove_book(book_id)
         response_object['message'] = 'Book removed!'
     return jsonify(response_object)
-
-
-@app.route('/charge', methods=['POST'])
-def create_charge():
-    post_data = request.get_json()
-    amount = round(float(post_data.get('book')['price']) * 100)
-    stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
-    charge = stripe.Charge.create(
-        amount=amount,
-        currency='usd',
-        card=post_data.get('token'),
-        description=post_data.get('book')['title']
-    )
-    response_object = {
-        'status': 'success',
-        'charge': charge
-    }
-    return jsonify(response_object), 200
-
-
-@app.route('/charge/<charge_id>')
-def get_charge(charge_id):
-    stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
-    response_object = {
-        'status': 'success',
-        'charge': stripe.Charge.retrieve(charge_id)
-    }
-    return jsonify(response_object), 200
 
 
 if __name__ == '__main__':
