@@ -2,7 +2,7 @@
 
 ### Want to learn how to build this?
 
-Check out the [post](https://testdriven.io/blog/accepting-payments-with-stripe-vuejs-and-flask/).
+Check out the [tutorial](https://testdriven.io/blog/accepting-payments-with-stripe-vuejs-and-flask/).
 
 ## Want to use this project?
 
@@ -22,20 +22,20 @@ Check out the [post](https://testdriven.io/blog/accepting-payments-with-stripe-v
 
     ```sh
     $ cd server
-    $ python3.9 -m venv env
+    $ python3 -m venv env
     $ source env/bin/activate
     (env)$ pip install -r requirements.txt
-    (env)$ python app.py
+    (env)$ flask run --port=5001 --debug
     ```
 
-    Navigate to [http://localhost:5000/ping](http://localhost:5000/ping)
+    Navigate to [http://localhost:5001/ping](http://localhost:5001/ping)
 
 1. Run the client-side Vue app in a different terminal window:
 
     ```sh
     $ cd client
     $ npm install
-    $ npm run serve
+    $ npm run dev
     ```
 
-    Navigate to [http://localhost:8080](http://localhost:8080)
+    Navigate to [http://localhost:5173](http://localhost:5173)

@@ -31,10 +31,6 @@ BOOKS = [
     }
 ]
 
-
-# configuration
-DEBUG = True
-
 # instantiate the app
 app = Flask(__name__)
 app.config.from_object(__name__)
@@ -73,7 +69,7 @@ def get_publishable_key():
 
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
-    domain_url = 'http://localhost:8081'
+    domain_url = 'http://localhost:5173'
 
     try:
         data = json.loads(request.data)
@@ -124,16 +120,9 @@ def all_books():
     return jsonify(response_object)
 
 
-@app.route('/books/<book_id>', methods=['GET', 'PUT', 'DELETE'])
+@app.route('/books/<book_id>', methods=['PUT', 'DELETE'])
 def single_book(book_id):
     response_object = {'status': 'success'}
-    if request.method == 'GET':
-        # TODO: refactor to a lambda and filter
-        return_book = ''
-        for book in BOOKS:
-            if book['id'] == book_id:
-                return_book = book
-        response_object['book'] = return_book
     if request.method == 'PUT':
         post_data = request.get_json()
         remove_book(book_id)
